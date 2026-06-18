@@ -1,0 +1,75 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Create Xcode project
+        run: |
+          cat > project.yml << 'EOF'
+          name: Epiphyte
+          options:
+            bundleIdPrefix: org.epiphyte
+            deploymentTarget:
+              iOS: "16.0"
+          targets:
+            Epiphyte:
+              type: application
+              platform: iOS
+              sources:
+                - path: Sources
+              settings:
+                base:
+                  PRODUCT_BUNDLE_IDENTIFIER: org.epiphyte.app
+                  MARKETING_VERSION: "2.0.0"
+                  CURRENT_PROJECT_VERSION: "1"
+                  SWIFT_VERSION: "5.9"
+                  CODE_SIGN_IDENTITY: ""
+                  CODE_SIGNING_REQUIRED: "NO"
+                  CODE_SIGNING_ALLOWED: "NO"
+                  INFOPLIST_KEY_UIApplicationSceneManifest_Generation: "YES"
+                  INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
+              resources:
+                - path: Sources/Resources
+          EOF
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build
+        run: |
+          xcodebuild -project Epiphyte.xcodeproj \
+            -scheme Epiphyte \
+            -destination 'generic/platform=iOS' \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=NO \
+            build
+
+      - name: Create IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/Release-iphoneos/Epiphyte.app Payload/ 2>/dev/null || \
+          cp -r ~/Library/Developer/Xcode/DerivedData/Epiphyte-*/Build/Products/Release-iphoneos/Epiphyte.app Payload/
+          zip -r Epiphyte.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Epiphyte-iOS
+          path: Epiphyte.ipa
