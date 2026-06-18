@@ -33,7 +33,7 @@ class SocketConnection {
                 connect(sock, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
             }
         }
-        guard result == 0 else { close(sock); return nil }
+        guard result == 0 else { Darwin.close(sock); return nil }
         return SocketConnection(fd: sock)
     }
 

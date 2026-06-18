@@ -197,7 +197,7 @@ struct MessageBubble: View {
                 VStack(alignment: message.isOurs ? .trailing : .leading, spacing: 2) {
                     Text(message.text)
                         .padding(10)
-                        .background(message.isOurs ? Color.blue : Color(.systemGray5))
+                        .background(message.isOurs ? Color.blue : Color.gray.opacity(0.3))
                         .foregroundColor(message.isOurs ? .white : .primary)
                         .cornerRadius(16)
                     Text(timeString)
